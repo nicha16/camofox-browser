@@ -108,6 +108,10 @@ class BrowserClient {
   async evaluate(tabId, expression) {
     return this.request('POST', `/tabs/${tabId}/evaluate`, { userId: this.userId, expression });
   }
+
+  async mouse(tabId, options) {
+    return this.request('POST', `/tabs/${tabId}/mouse`, { userId: this.userId, ...options });
+  }
   
   async type(tabId, options) {
     const { pressEnter, clear, ...typeOptions } = options;
