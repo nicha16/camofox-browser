@@ -4693,7 +4693,10 @@ app.post('/tabs/:tabId/scroll', async (req, res) => {
  *       Sends a low-level mouse action using viewport CSS-pixel coordinates.
  *       This is useful for human handoff UIs and visual automation flows where
  *       an external operator selects coordinates directly instead of an element
- *       ref or CSS selector.
+ *       ref or CSS selector. This is an advanced fallback; prefer refs or
+ *       selectors for ordinary agent interactions. All actions invalidate
+ *       cached snapshots and rendered structure because pointer handlers can
+ *       change page state, including hover on move.
  *     parameters:
  *       - name: tabId
  *         in: path
@@ -4728,6 +4731,7 @@ app.post('/tabs/:tabId/scroll', async (req, res) => {
  *                 type: integer
  *                 minimum: 1
  *                 default: 1
+ *                 description: Positive JSON integer; fractional and coerced values are rejected.
  *     responses:
  *       200:
  *         description: Mouse action result.
@@ -4774,8 +4778,7 @@ app.post('/tabs/:tabId/mouse', async (req, res) => {
       return res.status(400).json({ error: "button must be 'left', 'right', or 'middle'" });
     }
 
-    const nClickCount = Math.floor(Number(clickCount));
-    if (!Number.isFinite(nClickCount) || nClickCount < 1) {
+    if (!Number.isInteger(clickCount) || clickCount < 1) {
       return res.status(400).json({ error: 'clickCount must be a positive integer' });
     }
 
@@ -4796,9 +4799,16 @@ app.post('/tabs/:tabId/mouse', async (req, res) => {
         await tabState.page.mouse.move(nx, ny);
         await tabState.page.mouse.up({ button });
       } else {
-        await tabState.page.mouse.click(nx, ny, { button, clickCount: nClickCount });
+        await tabState.page.mouse.click(nx, ny, { button, clickCount });
       }
       await tabState.page.waitForTimeout(150);
+      // Even move/down/up can change DOM state through hover/pointer handlers.
+      // Invalidate after settlement under the lock so offset snapshots cannot
+      // reuse pre-action content or its rendered structure/ref table.
+      tabState.lastSnapshot = null;
+      tabState.lastStructure = null;
+      tabState.refs = new Map();
+      session.lastAccess = Date.now();
     }));
 
     pluginEvents.emit('tab:mouse', { userId, tabId: req.params.tabId, action, x: nx, y: ny });

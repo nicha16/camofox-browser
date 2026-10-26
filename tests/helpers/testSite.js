@@ -231,13 +231,20 @@ function createTestApp() {
       <body>
         <button id="target">Mouse Target</button>
         <div id="result"></div>
+        <table style="position:absolute;top:300px"><caption>Mouse state</caption>
+          <tr><th>Rendered state</th></tr><tr><td id="rendered">Before mouse action</td></tr>
+        </table>
         <script>
           const result = document.getElementById('result');
           const target = document.getElementById('target');
-          target.addEventListener('mousemove', () => { result.textContent = 'Mouse moved!'; });
-          target.addEventListener('mousedown', () => { result.textContent = 'Mouse down!'; });
-          target.addEventListener('mouseup', () => { result.textContent = 'Mouse up!'; });
-          target.addEventListener('click', () => { result.textContent = 'Mouse clicked!'; });
+          const update = text => {
+            result.textContent = text;
+            document.getElementById('rendered').textContent = text;
+          };
+          target.addEventListener('mousemove', () => update('Mouse moved!'));
+          target.addEventListener('mousedown', () => update('Mouse down!'));
+          target.addEventListener('mouseup', () => update('Mouse up!'));
+          target.addEventListener('click', () => update('Mouse clicked!'));
         </script>
       </body></html>
     `);
@@ -411,7 +418,7 @@ async function startTestSite(preferredPort = 0) {
   const app = createTestApp();
   
   return new Promise((resolve, reject) => {
-    server = app.listen(preferredPort, () => {
+    server = app.listen(preferredPort, '127.0.0.1', () => {
       port = server.address().port;
       console.log(`Test site running on port ${port}`);
       resolve(port);

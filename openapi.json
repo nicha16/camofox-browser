@@ -1342,7 +1342,7 @@
           "Interaction"
         ],
         "summary": "Send a mouse action at viewport coordinates",
-        "description": "Sends a low-level mouse action using viewport CSS-pixel coordinates. This is useful for human handoff UIs and visual automation flows where an external operator selects coordinates directly instead of an element ref or CSS selector.\n",
+        "description": "Sends a low-level mouse action using viewport CSS-pixel coordinates. This is useful for human handoff UIs and visual automation flows where an external operator selects coordinates directly instead of an element ref or CSS selector. This is an advanced fallback; prefer refs or selectors for ordinary agent interactions. All actions invalidate cached snapshots and rendered structure because pointer handlers can change page state, including hover on move.\n",
         "parameters": [
           {
             "name": "tabId",
@@ -1398,7 +1398,8 @@
                   "clickCount": {
                     "type": "integer",
                     "minimum": 1,
-                    "default": 1
+                    "default": 1,
+                    "description": "Positive JSON integer; fractional and coerced values are rejected."
                   }
                 }
               }
